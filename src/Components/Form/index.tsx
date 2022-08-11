@@ -1,45 +1,100 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Text } from 'react-native';
+import { useForm, Controller } from 'react-hook-form';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
 
 import { Button } from '../Button';
 import { Input } from '../Input';
 
 import { Container, Title } from './style';
 
-export const Form = () => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+type InputProps = {
+  email: string;
+  password: string;
+};
 
-  const handleLogin = () => {
-    Alert.alert('Seus dados', `Email: ${email}\nSenha: ${password}`);
+const schema = yup.object({
+  email: yup
+    .string()
+    .email('Digite um email válido')
+    .required('Preencha seu email por favor!'),
+  password: yup.string().required('Preencha sua senha por favor!'),
+});
+
+export const Form = () => {
+  const {
+    control,
+    formState: { errors },
+    handleSubmit,
+  } = useForm<InputProps>({
+    resolver: yupResolver(schema),
+  });
+
+  const handleLogin = (data: InputProps) => {
+    Alert.alert('Seus dados', `Email: ${data.email}\nSenha: ${data.password}`);
   };
 
   return (
     <Container>
       <Title> Login </Title>
-      <Input
-        placeholder='Email'
-        placeholderTextColor={'#777'}
-        autoCapitalize={'none'}
-        autoCorrect={false}
-        onChangeText={(t) => setEmail(t.includes(' ') ? '' : t)}
-        importantForAutofill='no'
+      <Controller
+        control={control}
+        rules={{
+          required: true,
+        }}
+        render={({ field: { onChange, onBlur, value } }) => (
+          <Input
+            placeholder='Email'
+            placeholderTextColor={'#777'}
+            autoCapitalize={'none'}
+            autoCorrect={false}
+            onChangeText={onChange}
+            importantForAutofill='no'
+            value={value}
+            onBlur={onBlur}
+          />
+        )}
+        name='email'
       />
-      <Input
-        placeholder='Senha'
-        placeholderTextColor={'#777'}
-        secureTextEntry
-        autoCapitalize={'none'}
-        onChangeText={(t) => setPassword(t.includes(' ') ? '' : t)}
-        autoCorrect={false}
-        importantForAutofill='no'
+
+      {errors.email && (
+        <Text style={{ color: 'red' }}> {errors.email.message} </Text>
+      )}
+
+      <Controller
+        control={control}
+        rules={{
+          required: true,
+        }}
+        render={({ field: { onChange, onBlur, value } }) => (
+          <Input
+            placeholder='Senha'
+            placeholderTextColor={'#777'}
+            secureTextEntry
+            autoCapitalize={'none'}
+            onChangeText={onChange}
+            autoCorrect={false}
+            importantForAutofill='no'
+            value={value}
+            onBlur={onBlur}
+          />
+        )}
+        name='password'
       />
+
+      {errors.password && (
+        <Text style={{ color: 'red' }}> {errors.password.message} </Text>
+      )}
+
       <Button
         title='Entrar'
         activeOpacity={0.6}
-        onPress={handleLogin}
-        disabled={!email || !password}
-        style={{ backgroundColor: !email || !password ? '#222' : '#1c59ba' }}
+        onPress={handleSubmit(handleLogin)}
+        disabled={errors.email || errors.password ? true : false}
+        style={{
+          backgroundColor: errors.email || errors.password ? '#222' : '#1c59ba',
+        }}
       />
     </Container>
   );
